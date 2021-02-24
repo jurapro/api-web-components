@@ -1,9 +1,5 @@
 import {dEvent, f} from "../main.js";
 
-import Product from "./Product.js";
-
-customElements.define('shop-product', Product);
-
 export default class Catalog extends HTMLElement {
 
     constructor() {
@@ -20,9 +16,7 @@ export default class Catalog extends HTMLElement {
 
     getTemplate() {
         return `
-        <div>
         <h2>Каталог товаров</h2>
-        </div>
         `;
     }
 
@@ -39,19 +33,23 @@ export default class Catalog extends HTMLElement {
 
     getProduct(data) {
         const product = document.createElement('shop-product');
-        product.data = data;
+        product.dataset.id = data.id;
+        product.dataset.name = data.name;
+        product.dataset.price = data.price;
+        product.dataset.description = data.description;
         return product;
     }
 
     addButtonToAddItem(product) {
         let btn = document.createElement('button');
+        btn.setAttribute('slot','btn-section');
         btn.textContent = '+';
-        btn.addEventListener('click', () => this.addToCart(product.data.id));
-        product.shadowRoot.querySelector('div').append(btn);
+        btn.addEventListener('click', () => this.addToCart(product.dataset.id));
+        product.append(btn);
     }
 
     removeButtonToAddItem(product) {
-        product.shadowRoot.querySelector('button')?.remove();
+        product.querySelector('button')?.remove();
     }
 
     async loadProducts() {
