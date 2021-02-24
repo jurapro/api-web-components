@@ -1,0 +1,11 @@
+main {
+    display: flex;
+    width: 100%;
+    gap: 1rem;
+}
+shop-catalog, .profile {
+    display: flex;
+    flex: 50%;
+    flex-direction: column;
+    gap: 1rem;
+}
