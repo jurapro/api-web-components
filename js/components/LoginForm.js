@@ -67,7 +67,6 @@ export default class LoginForm extends HTMLElement {
     }
 
     async login() {
-
         if (!this.data.email || !this.data.password) return;
         let res = await f('login', 'post', null, this.data);
         if (res.message) {
@@ -75,7 +74,6 @@ export default class LoginForm extends HTMLElement {
             return;
         }
         dEvent('user-login', {email: this.data.email, api_token: res.api_token});
-
     }
 
     async out() {

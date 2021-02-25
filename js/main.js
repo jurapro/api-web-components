@@ -2,6 +2,8 @@ import Catalog from "./components/Catalog.js";
 import LoginForm from "./components/LoginForm.js";
 import Cart from "./components/Cart.js";
 import Product from "./components/Product.js";
+import Order from "./components/Order.js";
+import Orders from "./components/Orders.js";
 
 import User from "./classes/User.js";
 
@@ -47,6 +49,8 @@ class App {
         customElements.define('shop-catalog', Catalog);
         customElements.define('shop-login', LoginForm);
         customElements.define('shop-cart', Cart);
+        customElements.define('shop-order', Order);
+        customElements.define('shop-orders', Orders);
     }
 
     async loadData() {

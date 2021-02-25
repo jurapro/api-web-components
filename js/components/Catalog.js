@@ -10,14 +10,18 @@ export default class Catalog extends HTMLElement {
 
     connectedCallback() {
         this.attachShadow({mode: 'open'});
-        this.shadowRoot.innerHTML = this.getTemplate();
         this.bindEvents();
     }
 
-    getTemplate() {
-        return `
-        <h2>Каталог товаров</h2>
-        `;
+    render() {
+        this.shadowRoot.append(this.getTitle());
+        this.products.forEach(product => this.shadowRoot.append(product));
+    }
+
+    getTitle() {
+        const h = document.createElement('h3');
+        h.textContent = 'Каталог товаров';
+        return h;
     }
 
     bindEvents() {
@@ -27,6 +31,7 @@ export default class Catalog extends HTMLElement {
         });
 
         document.addEventListener('user-out', () => {
+            this.user = null;
             this.products.forEach(product => this.removeButtonToAddItem(product));
         });
     }
@@ -42,23 +47,28 @@ export default class Catalog extends HTMLElement {
 
     addButtonToAddItem(product) {
         let btn = document.createElement('button');
-        btn.setAttribute('slot','btn-section');
+        btn.setAttribute('slot', 'btn-section');
         btn.textContent = '+';
         btn.addEventListener('click', () => this.addToCart(product.dataset.id));
         product.append(btn);
+        return product;
     }
 
     removeButtonToAddItem(product) {
         product.querySelector('button')?.remove();
     }
 
+    addItem(item) {
+        let product = this.getProduct(item);
+        this.products.push(product);
+    }
+
     async loadProducts() {
         let list = await f('products');
         list.forEach(el => {
-            let product = this.getProduct(el);
-            this.products.push(product);
-            this.shadowRoot.append(product);
+            this.addItem(el);
         });
+        this.render();
     }
 
     async addToCart(id) {

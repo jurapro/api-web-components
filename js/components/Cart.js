@@ -14,16 +14,6 @@ export default class Cart extends HTMLElement {
         this.bindEvents();
     }
 
-    render() {
-        this.shadowRoot.append(this.getTitle());
-        this.products.forEach(id => {
-            this.shadowRoot.append(this.getItem(id));
-        });
-
-        this.shadowRoot.append(this.getPriceTitle());
-        this.shadowRoot.append(this.getButtonAddOrder());
-    }
-
     bindEvents() {
         document.addEventListener('user-login', (e) => {
             this.user = e.detail;
@@ -31,6 +21,7 @@ export default class Cart extends HTMLElement {
         });
 
         document.addEventListener('user-out', () => {
+            this.user = null;
             this.clearCart();
         });
 
@@ -45,6 +36,17 @@ export default class Cart extends HTMLElement {
         document.addEventListener('order-by', () => {
             this.loadProducts();
         });
+
+    }
+
+    render() {
+        this.shadowRoot.append(this.getTitle());
+        this.products.forEach(id => {
+            this.shadowRoot.append(this.getItem(id));
+        });
+
+        this.shadowRoot.append(this.getPriceTitle());
+        this.shadowRoot.append(this.getButtonAddOrder());
     }
 
     getTitle() {
@@ -68,18 +70,6 @@ export default class Cart extends HTMLElement {
         return h;
     }
 
-    getCountProduct(id) {
-        return this.items.filter(el => el.product.id === id).length;
-    }
-
-    getAllPrice() {
-        let cost = 0;
-        this.items.forEach(el => {
-            cost += el.product.price;
-        });
-        return cost;
-    }
-
     getButtonAddOrder() {
         let btn = document.createElement('button');
         btn.classList.add('order-btn');
@@ -88,16 +78,33 @@ export default class Cart extends HTMLElement {
         return btn;
     }
 
+    getCountProduct(id) {
+        return this.items.filter(el => el.product.id === id).length;
+    }
+
+    getAllPrice() {
+        return this.items.reduce((sum, el) => sum + el.product.price, 0);
+    }
+
     getFirstProduct(id) {
         return this.items.find(item => item.product.id === id);
     }
 
     createProductElement(data) {
-        const product = document.createElement('shop-product');
+        let product = document.createElement('shop-product');
         product.dataset.id = data.id;
         product.dataset.name = data.name;
         product.dataset.price = data.price;
         product.dataset.description = data.description;
+        return product;
+    }
+
+    addButtonToRemoveFromCart(product, id) {
+        let btn = document.createElement('button');
+        btn.setAttribute('slot', 'btn-section');
+        btn.textContent = ' - ';
+        btn.addEventListener('click', () => this.removeFromCart(id));
+        product.append(btn);
         return product;
     }
 
@@ -107,14 +114,7 @@ export default class Cart extends HTMLElement {
         btn.textContent = '+';
         btn.addEventListener('click', () => this.addToCart(product.dataset.id));
         product.append(btn);
-    }
-
-    addButtonToRemoveFromCart(product, id) {
-        let btn = document.createElement('button');
-        btn.setAttribute('slot', 'btn-section');
-        btn.textContent = '-';
-        btn.addEventListener('click', () => this.removeFromCart(id));
-        product.append(btn);
+        return product;
     }
 
     addCountTitle(product) {
@@ -122,6 +122,7 @@ export default class Cart extends HTMLElement {
         h.setAttribute('slot', 'btn-section');
         h.textContent = this.getCountProduct(+product.dataset.id).toString();
         product.append(h);
+        return product;
     }
 
     addItem(el) {
