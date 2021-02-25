@@ -6,6 +6,7 @@ export default class Cart extends HTMLElement {
         super();
         this.user = null;
         this.items = [];
+        this.products = new Set();
     }
 
     connectedCallback() {
@@ -15,42 +16,12 @@ export default class Cart extends HTMLElement {
 
     render() {
         this.shadowRoot.append(this.getTitle());
-        this.items.forEach(el => {
-            this.addButtonToRemoveFromCart(el);
-            this.addCountTitle(el);
-            this.addButtonToAddItem(el);
-            this.shadowRoot.append(el.product);
+        this.products.forEach(id => {
+            this.shadowRoot.append(this.getItem(id));
         });
+
         this.shadowRoot.append(this.getPriceTitle());
         this.shadowRoot.append(this.getButtonAddOrder());
-    }
-
-    getTitle() {
-        const h = document.createElement('h3');
-        h.textContent = 'Ваша корзина';
-        return h;
-    }
-
-    getPriceTitle() {
-        const h = document.createElement('h3');
-        h.textContent = `Сумма вашего заказа: ${this.getPrice().toLocaleString()} руб.`;
-        return h;
-    }
-
-    getPrice() {
-        let cost = 0;
-        this.items.forEach(el => {
-            cost += el.count * el.price;
-        });
-        return cost;
-    }
-
-    getButtonAddOrder() {
-        let btn = document.createElement('button');
-        btn.classList.add('order-btn');
-        btn.textContent = 'Оформить заказ';
-        btn.addEventListener('click', () => this.order());
-        return btn;
     }
 
     bindEvents() {
@@ -76,7 +47,52 @@ export default class Cart extends HTMLElement {
         });
     }
 
-    getProduct(data) {
+    getTitle() {
+        const h = document.createElement('h3');
+        h.textContent = 'Ваша корзина';
+        return h;
+    }
+
+    getItem(id) {
+        let item = this.getFirstProduct(id);
+        let product = this.createProductElement(item.product);
+        this.addButtonToRemoveFromCart(product, item.id);
+        this.addCountTitle(product);
+        this.addButtonToAddItem(product);
+        return product;
+    }
+
+    getPriceTitle() {
+        const h = document.createElement('h3');
+        h.textContent = `Сумма вашего заказа: ${this.getAllPrice().toLocaleString()} руб.`;
+        return h;
+    }
+
+    getCountProduct(id) {
+        return this.items.filter(el => el.product.id === id).length;
+    }
+
+    getAllPrice() {
+        let cost = 0;
+        this.items.forEach(el => {
+            cost += el.product.price;
+        });
+        return cost;
+    }
+
+    getButtonAddOrder() {
+        let btn = document.createElement('button');
+        btn.classList.add('order-btn');
+        btn.textContent = 'Оформить заказ';
+        btn.addEventListener('click', () => this.order());
+        return btn;
+    }
+
+    getFirstProduct(id) {
+        return this.items.find(item => item.product.id === id);
+    }
+
+    createProductElement(data) {
         const product = document.createElement('shop-product');
         product.dataset.id = data.id;
         product.dataset.name = data.name;
@@ -85,48 +101,37 @@ export default class Cart extends HTMLElement {
         return product;
     }
 
-    addButtonToAddItem(item) {
+    addButtonToAddItem(product) {
         let btn = document.createElement('button');
         btn.setAttribute('slot', 'btn-section');
         btn.textContent = '+';
-        btn.addEventListener('click', () => this.addToCart(item.product.dataset.id));
-        item.product.append(btn);
+        btn.addEventListener('click', () => this.addToCart(product.dataset.id));
+        product.append(btn);
     }
 
-    addButtonToRemoveFromCart(item) {
+    addButtonToRemoveFromCart(product, id) {
         let btn = document.createElement('button');
         btn.setAttribute('slot', 'btn-section');
         btn.textContent = '-';
-        btn.addEventListener('click', () => this.removeFromCart(item.id));
-        item.product.append(btn);
+        btn.addEventListener('click', () => this.removeFromCart(id));
+        product.append(btn);
     }
 
-    addCountTitle(item) {
+    addCountTitle(product) {
         let h = document.createElement('span');
         h.setAttribute('slot', 'btn-section');
-        h.textContent = item.count;
-        item.product.append(h);
+        h.textContent = this.getCountProduct(+product.dataset.id).toString();
+        product.append(h);
     }
 
-    addItem(product, id) {
-        let el = this.items.find((el) => el.id_product === product.dataset.id);
-        if (el) {
-            el.count++;
-            el.product.dataset.price = (el.price * el.count).toString();
-            return;
-        }
-
-        this.items.push({
-            id: id,
-            id_product: product.dataset.id,
-            product: product,
-            count: 1,
-            price: product.dataset.price,
-        })
+    addItem(el) {
+        this.items.push(el);
+        this.products.add(el.product.id);
     }
 
     clearCart() {
         this.items = [];
+        this.products.clear();
         this.shadowRoot.innerHTML = '';
     }
 
@@ -134,8 +139,7 @@ export default class Cart extends HTMLElement {
         this.clearCart();
         let list = await f('cart', 'get', this.user.api_token);
         list.forEach(el => {
-            let product = this.getProduct(el.product);
-            this.addItem(product, el.id);
+            this.addItem(el);
         });
         this.render();
     }
@@ -156,7 +160,7 @@ export default class Cart extends HTMLElement {
             alert(res.message);
             return;
         }
-        alert(`Заказ оформлен. Сумма заказа составила: ${this.getPrice()}`);
+        alert(`Заказ оформлен. Сумма заказа составила: ${this.getAllPrice()}`);
         dEvent('order-by');
     }
 }
